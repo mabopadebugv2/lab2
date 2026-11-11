@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'dart:ui';
 
 void main() {
   runApp(const MyApp());
@@ -7,116 +10,292 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Lab 2',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Lab 2: Flutter GUI')),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background
+          Image.asset(
+            'assets/bg.jpg',
+            fit: BoxFit.cover,
+          ),
+
+          // Content on top
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Frosted glass header
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'RoadEZ!',
+                              style: TextStyle(fontSize: 50),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.wb_sunny,
+                                        color: Colors.orange, size: 28),
+                                    SizedBox(width: 6),
+                                    Text('32°C',
+                                        style: TextStyle(fontSize: 20)),
+                                  ],
+                                ),
+                                SizedBox(height: 4),
+                                LiveDateTime(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  const Text(
+                    'Welcome to your personalized road trip!',
+                    style: TextStyle(
+                        fontFamily: 'Pacifico',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.white,
+                        letterSpacing: 2,
+                      shadows: [
+                        Shadow(color: Colors.black, blurRadius: 6, offset: Offset(2, 2)),
+                      ],),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // NEW: swipeable vehicle picker + GO button
+                  const VehiclePicker(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class VehiclePicker extends StatefulWidget {
+  const VehiclePicker({super.key});
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  @override
+  State<VehiclePicker> createState() => _VehiclePickerState();
+}
+
+class _VehiclePickerState extends State<VehiclePicker> {
+  final _controller = PageController(viewportFraction: 0.8);
+  int _current = 0;
+
+  // name + image path
+  final _vehicles = const [
+    ('NazaBlade', 'assets/photo.jpg'),
+    ('Ysuku', 'assets/ysuku.jpg'),
+    ('RsxWinner', 'assets/winner.jpg'),
+    ('ADV','assets/adv.jpg'),
+  ];
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Text(
+          'Choose your ride',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            shadows: [
+              Shadow(color: Colors.black, blurRadius: 6, offset: Offset(2, 2)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Swipeable pictures
+        SizedBox(
+          height: 260,
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: _vehicles.length,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (context, i) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset(_vehicles[i].$2, fit: BoxFit.cover),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Vehicle name
+        Text(
+          _vehicles[_current].$1,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+              shadows: [
+                Shadow(color: Colors.black, blurRadius: 6, offset: Offset(2, 2)),
+              ],
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Dots
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_vehicles.length, (i) {
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: i == _current ? 20 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: i == _current ? Colors.white : Colors.white54,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 24),
+
+        // Go button
+        SizedBox(
+          width: 200,
+          height: 50,
+          child: FilledButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NextPage(vehicle: _vehicles[_current].$1),
+                ),
+              );
+            },
+            child: const Text('GO', style: TextStyle(fontSize: 20)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Placeholder for your upcoming project page
+class NextPage extends StatelessWidget {
+  final String vehicle;
+  const NextPage({super.key, required this.vehicle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Next Page')),
+      body: Center(
+        child: Text(
+          'You chose: $vehicle, will be updated soon',
+          style: const TextStyle(fontSize: 24),
+        ),
+      ),
+    );
+  }
+}
+
+class LiveDateTime extends StatefulWidget {
+  const LiveDateTime({super.key});
+
+  @override
+  State<LiveDateTime> createState() => _LiveDateTimeState();
+}
+
+class _LiveDateTimeState extends State<LiveDateTime> {
+  late DateTime _now;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now().toUtc().add(const Duration(hours: 8));
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      setState(() => _now = DateTime.now().toUtc().add(const Duration(hours: 8)));
     });
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          DateFormat('EEE, d MMM yyyy').format(_now),
+          style: const TextStyle(fontSize: 14),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+        Text(
+          DateFormat('hh:mm:ss a').format(_now),
+          style: const TextStyle(fontSize: 14),
+        ),
+      ],
     );
   }
 }
+// i did this based on claude ai as a companion to guide and
+// make my concept comes alive
